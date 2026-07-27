@@ -4,7 +4,7 @@ pub mod config;
 // pub mod storage;
 // pub mod reader;
 pub mod levels;
-// pub mod error;
+pub mod error;
 
 pub fn add(left: u64, right: u64) -> u64 {
     left + right

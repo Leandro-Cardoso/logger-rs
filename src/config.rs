@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use crate::error::LoggerError;
+
 #[derive(Debug, Clone)]
 pub struct LoggerConfig {
 
@@ -26,36 +28,45 @@ impl LoggerConfig {
 
     }
 
-    /// Cria uma configuração padrão
-    pub fn default() -> Self {
+    /// Valida se a configuração está correta
+    pub fn validate(
+        &self
+    ) -> Result<(), LoggerError> {
+
+        if self.max_storage_mb == 0 {
+
+            return Err(
+                LoggerError::invalid_configuration(
+                    "Storage limit must be greater than zero"
+                )
+            );
+
+        }
+
+        if self.directory.as_os_str().is_empty() {
+
+            return Err(
+                LoggerError::invalid_configuration(
+                    "Log directory cannot be empty"
+                )
+            );
+
+        }
+
+        Ok(())
+
+    }
+
+}
+
+impl Default for LoggerConfig {
+
+    fn default() -> Self {
 
         Self {
             directory: PathBuf::from("./logs"),
             max_storage_mb: 100,
         }
-
-    }
-
-    /// Valida se a configuração está correta
-    pub fn validate(
-        &self
-    ) -> Result<(), String> {
-
-        if self.max_storage_mb == 0 {
-            return Err(
-                "Storage limit must be greater than zero"
-                .to_string()
-            );
-        }
-
-        if self.directory.as_os_str().is_empty() {
-            return Err(
-                "Log directory cannot be empty"
-                .to_string()
-            );
-        }
-
-        Ok(())
 
     }
 
@@ -114,9 +125,16 @@ mod tests {
                 0
             );
 
+        let result =
+            config.validate();
+
         assert!(
-            config.validate()
-            .is_err()
+            result.is_err()
+        );
+
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Invalid configuration: Storage limit must be greater than zero"
         );
 
     }
@@ -136,5 +154,5 @@ mod tests {
         );
 
     }
-    
+
 }
