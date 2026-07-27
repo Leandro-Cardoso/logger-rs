@@ -2,5 +2,14 @@
 name = "logger-rs"
 version = "0.1.0"
 edition = "2024"
+authors = ["Leandro Cardoso"]
+description = "A simple and configurable logging library for Rust applications"
+license = "MIT"
 
 [dependencies]
+chrono = "0.4"
+colored = "2"
+thiserror = "2"
+
+[dev-dependencies]
+tempfile = "3"
