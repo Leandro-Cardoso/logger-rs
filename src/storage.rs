@@ -6,10 +6,7 @@ use std::{
 
 use chrono::Local;
 
-use crate::{
-    config::LoggerConfig,
-    error::LoggerError,
-};
+use crate::{config::LoggerConfig, error::LoggerError};
 
 /// Responsável pela persistência dos logs.
 #[derive(Debug)]
@@ -30,10 +27,7 @@ impl Storage {
     }
 
     /// Escreve uma linha no arquivo de log do dia.
-    pub fn write(
-        &self,
-        line: &str,
-    ) -> Result<(), LoggerError> {
+    pub fn write(&self, line: &str) -> Result<(), LoggerError> {
         self.initialize()?;
 
         let path = self.current_log_file();
@@ -44,8 +38,7 @@ impl Storage {
             .open(&path)
             .map_err(|e| LoggerError::FileCreationFailed(e.to_string()))?;
 
-        writeln!(file, "{line}")
-            .map_err(|e| LoggerError::WriteFailed(e.to_string()))?;
+        writeln!(file, "{line}").map_err(|e| LoggerError::WriteFailed(e.to_string()))?;
 
         self.cleanup()?;
 
@@ -54,9 +47,7 @@ impl Storage {
 
     /// Retorna o caminho do arquivo atual.
     pub fn current_log_file(&self) -> PathBuf {
-        self.config
-            .directory
-            .join(Self::current_file_name())
+        self.config.directory.join(Self::current_file_name())
     }
 
     /// Calcula o tamanho total dos logs.
@@ -92,9 +83,7 @@ impl Storage {
         Ok(())
     }
 
-    fn oldest_file(
-        &self,
-    ) -> Result<Option<PathBuf>, LoggerError> {
+    fn oldest_file(&self) -> Result<Option<PathBuf>, LoggerError> {
         if !self.config.directory.exists() {
             return Ok(None);
         }
@@ -105,25 +94,16 @@ impl Storage {
             let entry = entry?;
 
             if entry.metadata()?.is_file() {
-                files.push((
-                    entry.metadata()?.modified()?,
-                    entry.path(),
-                ));
+                files.push((entry.metadata()?.modified()?, entry.path()));
             }
         }
 
         files.sort_by_key(|(date, _)| *date);
 
-        Ok(files
-            .into_iter()
-            .next()
-            .map(|(_, path)| path))
+        Ok(files.into_iter().next().map(|(_, path)| path))
     }
 
     fn current_file_name() -> String {
-        format!(
-            "log_{}.txt",
-            Local::now().format("%Y-%m-%d")
-        )
+        format!("log_{}.txt", Local::now().format("%Y-%m-%d"))
     }
 }

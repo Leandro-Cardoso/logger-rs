@@ -18,10 +18,7 @@ impl Formatter {
 
     /// Formata uma entrada para ser exibida no console.
     pub fn format_console(entry: &LogEntry) -> String {
-        let level = entry
-            .level
-            .as_str()
-            .color(entry.level.color());
+        let level = entry.level.as_str().color(entry.level.color());
 
         format!(
             "[{}] [{}] {}",
@@ -33,10 +30,7 @@ impl Formatter {
 
     /// Formata apenas o timestamp.
     fn format_timestamp(entry: &LogEntry) -> String {
-        entry
-            .timestamp
-            .format("%Y-%m-%d %H:%M:%S")
-            .to_string()
+        entry.timestamp.format("%Y-%m-%d %H:%M:%S").to_string()
     }
 }
 
@@ -45,23 +39,11 @@ mod tests {
     use chrono::{Local, TimeZone};
 
     use super::*;
-    use crate::{
-        entry::LogEntry,
-        levels::LogLevel,
-    };
+    use crate::{entry::LogEntry, levels::LogLevel};
 
     fn create_entry() -> LogEntry {
         LogEntry::with_timestamp(
-            Local
-                .with_ymd_and_hms(
-                    2026,
-                    7,
-                    27,
-                    15,
-                    30,
-                    45,
-                )
-                .unwrap(),
+            Local.with_ymd_and_hms(2026, 7, 27, 15, 30, 45).unwrap(),
             LogLevel::Info,
             "Sistema iniciado",
         )
@@ -73,10 +55,7 @@ mod tests {
 
         let text = Formatter::format(&entry);
 
-        assert_eq!(
-            text,
-            "[2026-07-27 15:30:45] [INFO] Sistema iniciado"
-        );
+        assert_eq!(text, "[2026-07-27 15:30:45] [INFO] Sistema iniciado");
     }
 
     #[test]
@@ -101,9 +80,6 @@ mod tests {
     fn test_timestamp() {
         let entry = create_entry();
 
-        assert_eq!(
-            Formatter::format_timestamp(&entry),
-            "2026-07-27 15:30:45"
-        );
+        assert_eq!(Formatter::format_timestamp(&entry), "2026-07-27 15:30:45");
     }
 }

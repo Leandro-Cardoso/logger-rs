@@ -17,10 +17,7 @@ pub struct LogEntry {
 
 impl LogEntry {
     /// Cria uma nova entrada de log.
-    pub fn new(
-        level: LogLevel,
-        message: impl Into<String>,
-    ) -> Self {
+    pub fn new(level: LogLevel, message: impl Into<String>) -> Self {
         Self {
             timestamp: Local::now(),
             level,
@@ -50,10 +47,7 @@ mod tests {
 
     #[test]
     fn test_create_entry() {
-        let entry = LogEntry::new(
-            LogLevel::Info,
-            "Teste",
-        );
+        let entry = LogEntry::new(LogLevel::Info, "Teste");
 
         assert_eq!(entry.level, LogLevel::Info);
         assert_eq!(entry.message, "Teste");
@@ -61,10 +55,7 @@ mod tests {
 
     #[test]
     fn test_clone_entry() {
-        let entry = LogEntry::new(
-            LogLevel::Warning,
-            "Mensagem",
-        );
+        let entry = LogEntry::new(LogLevel::Warning, "Mensagem");
 
         let clone = entry.clone();
 
@@ -75,20 +66,14 @@ mod tests {
     fn test_message_from_string() {
         let message = String::from("Olá");
 
-        let entry = LogEntry::new(
-            LogLevel::Debug,
-            message,
-        );
+        let entry = LogEntry::new(LogLevel::Debug, message);
 
         assert_eq!(entry.message, "Olá");
     }
 
     #[test]
     fn test_message_from_str() {
-        let entry = LogEntry::new(
-            LogLevel::Error,
-            "Erro",
-        );
+        let entry = LogEntry::new(LogLevel::Error, "Erro");
 
         assert_eq!(entry.message, "Erro");
     }
