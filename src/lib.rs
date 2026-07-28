@@ -1,3 +1,4 @@
+pub mod builder;
 pub mod config;
 pub mod entry;
 pub mod error;
@@ -7,6 +8,7 @@ pub mod logger;
 pub mod reader;
 pub mod storage;
 
+pub use builder::LoggerBuilder;
 pub use config::LoggerConfig;
 pub use entry::LogEntry;
 pub use error::LoggerError;

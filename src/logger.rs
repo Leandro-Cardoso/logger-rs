@@ -1,6 +1,6 @@
 use crate::{
-    config::LoggerConfig, entry::LogEntry, error::LoggerError, formatter::Formatter,
-    levels::LogLevel, reader::Reader, storage::Storage,
+    builder::LoggerBuilder, config::LoggerConfig, entry::LogEntry, error::LoggerError,
+    formatter::Formatter, levels::LogLevel, reader::Reader, storage::Storage,
 };
 
 #[derive(Debug)]
@@ -22,6 +22,11 @@ impl Logger {
         let reader = Reader::new(config);
 
         Ok(Self { storage, reader })
+    }
+
+    /// Construtor.
+    pub fn builder() -> LoggerBuilder {
+        LoggerBuilder::new()
     }
 
     /// Registra uma mensagem de log.
