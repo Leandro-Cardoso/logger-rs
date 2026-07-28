@@ -1,124 +1,109 @@
-use chrono::Local;
 use colored::Colorize;
 
-use crate::levels::LogLevel;
+use crate::entry::LogEntry;
 
+/// Responsável por formatar uma entrada de log.
 pub struct Formatter;
 
 impl Formatter {
+    /// Formata uma entrada para ser gravada em arquivo.
+    pub fn format(entry: &LogEntry) -> String {
+        format!(
+            "[{}] [{}] {}",
+            Self::format_timestamp(entry),
+            entry.level.as_str(),
+            entry.message
+        )
+    }
 
-    /// Formata uma mensagem para armazenamento em arquivo
-    pub fn format(
-        level: LogLevel,
-        message: &str,
-    ) -> String {
-
-        let timestamp =
-            Self::timestamp();
+    /// Formata uma entrada para ser exibida no console.
+    pub fn format_console(entry: &LogEntry) -> String {
+        let level = entry
+            .level
+            .as_str()
+            .color(entry.level.color());
 
         format!(
             "[{}] [{}] {}",
-            timestamp,
-            level.as_str(),
-            message
+            Self::format_timestamp(entry),
+            level,
+            entry.message
         )
-
     }
 
-    /// Formata uma mensagem para exibição no console
-    pub fn format_console(
-        level: LogLevel,
-        message: &str,
-    ) -> String {
-
-        let timestamp =
-            Self::timestamp();
-
-        let level_text =
-            level
-                .as_str()
-                .color(level.color());
-
-        format!(
-            "[{}] [{}] {}",
-            timestamp,
-            level_text,
-            message
-        )
-
-    }
-
-    /// Retorna data e hora atual
-    fn timestamp() -> String {
-
-        Local::now()
+    /// Formata apenas o timestamp.
+    fn format_timestamp(entry: &LogEntry) -> String {
+        entry
+            .timestamp
             .format("%Y-%m-%d %H:%M:%S")
             .to_string()
-
     }
-
 }
 
 #[cfg(test)]
 mod tests {
+    use chrono::{Local, TimeZone};
 
     use super::*;
+    use crate::{
+        entry::LogEntry,
+        levels::LogLevel,
+    };
 
-    #[test]
-    fn test_format_log_message() {
-
-        let result =
-            Formatter::format(
-                LogLevel::Info,
-                "Sistema iniciado"
-            );
-
-        assert!(
-            result.contains("[INFO]")
-        );
-
-        assert!(
-            result.contains("Sistema iniciado")
-        );
-
+    fn create_entry() -> LogEntry {
+        LogEntry::with_timestamp(
+            Local
+                .with_ymd_and_hms(
+                    2026,
+                    7,
+                    27,
+                    15,
+                    30,
+                    45,
+                )
+                .unwrap(),
+            LogLevel::Info,
+            "Sistema iniciado",
+        )
     }
 
     #[test]
-    fn test_format_error_message() {
+    fn test_format() {
+        let entry = create_entry();
 
-        let result =
-            Formatter::format(
-                LogLevel::Error,
-                "Falha no banco"
-            );
+        let text = Formatter::format(&entry);
 
-        assert!(
-            result.contains("[ERROR]")
+        assert_eq!(
+            text,
+            "[2026-07-27 15:30:45] [INFO] Sistema iniciado"
         );
-
-        assert!(
-            result.contains("Falha no banco")
-        );
-
     }
 
     #[test]
-    fn test_timestamp_format() {
+    fn test_console_format_contains_message() {
+        let entry = create_entry();
 
-        let result =
-            Formatter::format(
-                LogLevel::Debug,
-                "Teste"
-            );
+        let text = Formatter::format_console(&entry);
 
-        let parts:
-            Vec<&str> =
-            result.split(']').collect();
-
-        assert!(
-            parts[0].starts_with("[20")
-        );
-
+        assert!(text.contains("Sistema iniciado"));
     }
 
+    #[test]
+    fn test_console_format_contains_level() {
+        let entry = create_entry();
+
+        let text = Formatter::format_console(&entry);
+
+        assert!(text.contains("INFO"));
+    }
+
+    #[test]
+    fn test_timestamp() {
+        let entry = create_entry();
+
+        assert_eq!(
+            Formatter::format_timestamp(&entry),
+            "2026-07-27 15:30:45"
+        );
+    }
 }

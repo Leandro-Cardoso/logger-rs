@@ -1,7 +1,7 @@
 use std::{
     fs::{self, OpenOptions},
     io::Write,
-    path::{PathBuf},
+    path::PathBuf,
 };
 
 use chrono::Local;
@@ -11,28 +11,29 @@ use crate::{
     error::LoggerError,
 };
 
+/// Responsável pela persistência dos logs.
+#[derive(Debug)]
 pub struct Storage {
     config: LoggerConfig,
 }
 
 impl Storage {
+    /// Cria um novo Storage.
     pub fn new(config: LoggerConfig) -> Self {
         Self { config }
     }
 
-    /// Inicializa o armazenamento
+    /// Garante que o diretório de logs exista.
     pub fn initialize(&self) -> Result<(), LoggerError> {
         fs::create_dir_all(&self.config.directory)
             .map_err(|e| LoggerError::DirectoryCreationFailed(e.to_string()))
     }
 
-    /// Retorna o caminho do arquivo de log do dia.
-    pub fn current_log_file(&self) -> PathBuf {
-        self.config.directory.join(Self::daily_file_name())
-    }
-
-    /// Escreve uma linha no arquivo diário.
-    pub fn write(&self, line: &str) -> Result<(), LoggerError> {
+    /// Escreve uma linha no arquivo de log do dia.
+    pub fn write(
+        &self,
+        line: &str,
+    ) -> Result<(), LoggerError> {
         self.initialize()?;
 
         let path = self.current_log_file();
@@ -51,20 +52,26 @@ impl Storage {
         Ok(())
     }
 
-    /// Retorna o tamanho total ocupado pelos logs.
-    pub fn storage_size(&self) -> Result<u64, LoggerError> {
-        let mut total = 0;
+    /// Retorna o caminho do arquivo atual.
+    pub fn current_log_file(&self) -> PathBuf {
+        self.config
+            .directory
+            .join(Self::current_file_name())
+    }
 
+    /// Calcula o tamanho total dos logs.
+    pub fn storage_size(&self) -> Result<u64, LoggerError> {
         if !self.config.directory.exists() {
             return Ok(0);
         }
 
+        let mut total = 0;
+
         for entry in fs::read_dir(&self.config.directory)? {
             let entry = entry?;
-            let metadata = entry.metadata()?;
 
-            if metadata.is_file() {
-                total += metadata.len();
+            if entry.metadata()?.is_file() {
+                total += entry.metadata()?.len();
             }
         }
 
@@ -75,17 +82,19 @@ impl Storage {
         let limit = self.config.max_storage_mb * 1024 * 1024;
 
         while self.storage_size()? > limit {
-            let Some(file) = self.oldest_file()? else {
+            let Some(oldest) = self.oldest_file()? else {
                 break;
             };
 
-            fs::remove_file(file)?;
+            fs::remove_file(oldest)?;
         }
 
         Ok(())
     }
 
-    fn oldest_file(&self) -> Result<Option<PathBuf>, LoggerError> {
+    fn oldest_file(
+        &self,
+    ) -> Result<Option<PathBuf>, LoggerError> {
         if !self.config.directory.exists() {
             return Ok(None);
         }
@@ -94,11 +103,10 @@ impl Storage {
 
         for entry in fs::read_dir(&self.config.directory)? {
             let entry = entry?;
-            let metadata = entry.metadata()?;
 
-            if metadata.is_file() {
+            if entry.metadata()?.is_file() {
                 files.push((
-                    metadata.modified()?,
+                    entry.metadata()?.modified()?,
                     entry.path(),
                 ));
             }
@@ -106,10 +114,13 @@ impl Storage {
 
         files.sort_by_key(|(date, _)| *date);
 
-        Ok(files.into_iter().next().map(|(_, path)| path))
+        Ok(files
+            .into_iter()
+            .next()
+            .map(|(_, path)| path))
     }
 
-    fn daily_file_name() -> String {
+    fn current_file_name() -> String {
         format!(
             "log_{}.txt",
             Local::now().format("%Y-%m-%d")
