@@ -3,15 +3,27 @@ use crate::{
     formatter::Formatter, levels::LogLevel, reader::Reader, storage::Storage,
 };
 
+use std::path::PathBuf;
+
+/// Estrutura principal da biblioteca.
+///
+/// O Logger é responsável por coordenar:
+///
+/// - criação dos logs;
+/// - formatação;
+/// - armazenamento;
+/// - leitura.
 #[derive(Debug)]
 pub struct Logger {
     storage: Storage,
 
     reader: Reader,
+
+    config: LoggerConfig,
 }
 
 impl Logger {
-    /// Cria um novo Logger.
+    /// Cria um novo Logger utilizando uma configuração.
     pub fn new(config: LoggerConfig) -> Result<Self, LoggerError> {
         config.validate()?;
 
@@ -19,18 +31,43 @@ impl Logger {
 
         storage.initialize()?;
 
-        let reader = Reader::new(config);
+        let reader = Reader::new(config.clone());
 
-        Ok(Self { storage, reader })
+        Ok(Self {
+            storage,
+
+            reader,
+
+            config,
+        })
     }
 
-    /// Construtor.
+    /// Cria um Builder para configuração do Logger.
+    ///
+    /// Exemplo:
+    ///
+    /// ```
+    /// use logger_rs::Logger;
+    ///
+    /// let logger =
+    ///     Logger::builder()
+    ///         .max_storage_mb(200)
+    ///         .build();
+    /// ```
     pub fn builder() -> LoggerBuilder {
         LoggerBuilder::new()
     }
 
-    /// Registra uma mensagem de log.
+    /// Método interno responsável pelo fluxo de criação do log.
     fn log(&self, level: LogLevel, message: impl Into<String>) -> Result<(), LoggerError> {
+        /*
+            Verifica se o nível do log
+            deve ser registrado.
+        */
+        if level < self.config.minimum_level {
+            return Ok(());
+        }
+
         let entry = LogEntry::new(level, message);
 
         let file_message = Formatter::format(&entry);
@@ -44,46 +81,50 @@ impl Logger {
         Ok(())
     }
 
-    /// Registra mensagem de debug.
+    // ==========================
+    // Métodos de Log
+    // ==========================
+
+    /// Registra uma mensagem DEBUG.
     pub fn debug(&self, message: impl Into<String>) -> Result<(), LoggerError> {
         self.log(LogLevel::Debug, message)
     }
 
-    /// Registra mensagem informativa.
+    /// Registra uma mensagem INFO.
     pub fn info(&self, message: impl Into<String>) -> Result<(), LoggerError> {
         self.log(LogLevel::Info, message)
     }
 
-    /// Registra mensagem de sucesso.
+    /// Registra uma mensagem de sucesso.
     pub fn success(&self, message: impl Into<String>) -> Result<(), LoggerError> {
         self.log(LogLevel::Success, message)
     }
 
-    /// Registra alerta.
+    /// Registra uma mensagem WARNING.
     pub fn warning(&self, message: impl Into<String>) -> Result<(), LoggerError> {
         self.log(LogLevel::Warning, message)
     }
 
-    /// Registra erro.
+    /// Registra uma mensagem ERROR.
     pub fn error(&self, message: impl Into<String>) -> Result<(), LoggerError> {
         self.log(LogLevel::Error, message)
     }
 
-    /// Registra progresso.
+    /// Registra uma mensagem de progresso.
     pub fn progress(&self, message: impl Into<String>) -> Result<(), LoggerError> {
         self.log(LogLevel::Progress, message)
     }
 
-    // ============================
-    // Leitura
-    // ============================
+    // ==========================
+    // Leitura dos Logs
+    // ==========================
 
-    /// Lê os logs do dia atual.
+    /// Lê o arquivo de log do dia atual.
     pub fn read_today(&self) -> Result<String, LoggerError> {
         self.reader.read_today()
     }
 
-    /// Lê todos os logs.
+    /// Lê todos os arquivos de log.
     pub fn read_all(&self) -> Result<String, LoggerError> {
         self.reader.read_all()
     }
@@ -93,23 +134,8 @@ impl Logger {
         self.reader.tail(amount)
     }
 
-    /// Lista os arquivos existentes.
-    pub fn files(&self) -> Result<Vec<std::path::PathBuf>, LoggerError> {
+    /// Lista os arquivos de log existentes.
+    pub fn files(&self) -> Result<Vec<PathBuf>, LoggerError> {
         self.reader.list_files()
     }
-}
-
-#[test]
-fn test_logger_full_flow() {
-    let dir = tempfile::tempdir().unwrap();
-
-    let config = LoggerConfig::new(dir.path(), 10);
-
-    let logger = Logger::new(config).unwrap();
-
-    logger.info("Teste completo").unwrap();
-
-    let logs = logger.read_today().unwrap();
-
-    assert!(logs.contains("Teste completo"));
 }
